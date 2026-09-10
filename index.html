@@ -126,7 +126,7 @@
 <span class="p">X-Timestamp</span>: 1736500000
 
 {
-  <span class="k">"source"</span>: <span class="s">"ODOO"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"push"</span>,
       <span class="k">"line_group_ids"</span>: [<span class="s">"C001"</span>, <span class="s">"C002"</span>] },
@@ -159,7 +159,7 @@
 
 {
   <span class="k">"event_id"</span>: <span class="s">"550e8400-e29b-41d4-a716-446655440000"</span>,
-  <span class="k">"source"</span>: <span class="s">"ODOO"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"target"</span>: { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"push"</span>,
               <span class="k">"line_group_ids"</span>: [<span class="s">"C001"</span>, <span class="s">"C002"</span>] },
   <span class="k">"payload"</span>: { <span class="c">/* 原封不動 */</span> },
@@ -181,19 +181,19 @@
     <h3>案例 1 · 客戶進線:一進多出</h3>
     <p>客戶在對外 LINE 群發問。<code>LINE_EXTERNAL</code> 的 webhook server 把它正規化後送進 MEP,同時要給兩個下游:Odoo 記一筆、api-app 判斷關鍵字。<strong>一則進、兩則出</strong>,這就是 fan-out 的本色。</p>
     <pre>{
-  <span class="k">"source"</span>: <span class="s">"LINE_EXTERNAL"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"line_group_id"</span>: <span class="s">"Cabc123"</span>, <span class="k">"line_user_id"</span>: <span class="s">"Uabc123"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
     { <span class="k">"endpoint"</span>: <span class="s">"WEATHER_APP"</span> }
   ],
-  <span class="k">"payload"</span>: { <span class="c">/* 群訊息內容,含發話的 group/user、文字 */</span> }
+  <span class="k">"payload"</span>: { <span class="k">"text"</span>: <span class="s">"這批貨可以報價嗎"</span> }
 }</pre>
     <p class="fname">MEP:對 ODOO、WEATHER_APP 的 callback_url 各發一個 POST。門後各自解 payload。</p>
 
     <h3>案例 2 · Odoo 場勘通知:push 到指定群</h3>
     <p>Odoo 排定了一場場勘,要通知該案的客戶群與負責的內部群。target 是 LINE,<code>send_mode: push</code> 帶群名單(一個對外群、一個對內群)。</p>
     <pre>{
-  <span class="k">"source"</span>: <span class="s">"ODOO"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"push"</span>,
       <span class="k">"line_group_ids"</span>: [<span class="s">"C001"</span>] },
@@ -207,7 +207,7 @@
     <h3>案例 3 · 全體促銷:群發</h3>
     <p>對外 LINE@ 要發促銷給所有加好友的人。不帶名單,<code>send_mode: broadcast</code>。</p>
     <pre>{
-  <span class="k">"source"</span>: <span class="s">"WEATHER_APP"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"WEATHER_APP"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"broadcast"</span> }
   ],
@@ -218,7 +218,7 @@
     <h3>案例 4 · 公告到所有群:all_groups</h3>
     <p>要發一則公告到「LINE@ 目前所在的每一個群」。發送方不列群,<code>send_mode: all_groups</code>,由 LINE server 拿它自己維護的群清單去逐一 push。</p>
     <pre>{
-  <span class="k">"source"</span>: <span class="s">"ODOO"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_INTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"all_groups"</span> }
   ],
@@ -229,7 +229,7 @@
     <h3>案例 5 · App 之間互打:跟 LINE 無關也一樣</h3>
     <p>api-app(此處以 WEATHER_APP 代表)算完結果要寫回 Odoo。來源和目標都不是 LINE,沒有 send_mode、沒有名單——證明 MEP 對非 LINE 的 target 一視同仁。</p>
     <pre>{
-  <span class="k">"source"</span>: <span class="s">"WEATHER_APP"</span>,
+  <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"WEATHER_APP"</span> },
   <span class="k">"targets"</span>: [ { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> } ],
   <span class="k">"payload"</span>: { <span class="c">/* Odoo webhook 自己約定的內容 */</span> }
 }</pre>
