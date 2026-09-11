@@ -1,126 +1,487 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MEP — Webhook Fan-out 規格</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#F3F4F6; --paper:#FFFFFF;
-    --ink:#17212E; --ink-soft:#52606D; --ink-faint:#8A94A2;
-    --line:#DFE3E9; --line-soft:#EBEEF2; --brand:#22384F;
-    --a:#2C6E9B; --a-bg:#EAF2F8; --ok:#17876A; --ok-bg:#E7F3EE;
-    --warn:#A96A1B; --warn-bg:#FBF3E6;
-    --code-bg:#1C2A3A; --code-ink:#DCE4EE;
-    --shadow:0 1px 2px rgba(23,33,46,.04),0 8px 28px rgba(23,33,46,.06);
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans TC',sans-serif;font-size:16px;line-height:1.68;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:940px;margin:0 auto;padding:0 26px}
-  .cover{background:var(--brand);color:#EAEEF3;padding:52px 0 42px;position:relative;overflow:hidden}
-  .cover::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:26px 26px;pointer-events:none}
-  .cover .wrap{position:relative;z-index:1}
-  .kick{font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.04em;color:#8FB2CE;margin:0 0 16px}
-  .cover h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,38px);line-height:1.12;margin:0 0 12px}
-  .cover .lede{font-size:16px;max-width:64ch;color:#C4D2DE;margin:0}
-  main{padding:38px 0 80px}
-  section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:30px 34px;margin:0 0 22px;box-shadow:var(--shadow)}
-  h2{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
-  h2 .no{font-family:'JetBrains Mono',monospace;font-size:15px;color:var(--a);font-weight:500}
-  .sub{color:var(--ink-soft);font-size:15px;margin:0 0 22px;padding-bottom:16px;border-bottom:1px solid var(--line-soft)}
-  h3{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16.5px;margin:24px 0 10px}
-  p{margin:0 0 13px}strong{font-weight:600}
-  code{font-family:'JetBrains Mono',monospace;font-size:.86em;background:var(--line-soft);padding:1.5px 6px;border-radius:5px;color:#294056}
-  ul,ol{margin:0 0 14px;padding-left:22px}li{margin:0 0 7px}
-  pre{background:var(--code-bg);color:var(--code-ink);padding:18px 20px;border-radius:10px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.62;margin:0 0 14px}
-  pre .k{color:#7FB0D8}pre .s{color:#9BD1A4}pre .c{color:#6B7C8E}pre .n{color:#D8A26B}pre .b{color:#C08CD8}pre .p{color:#D8A26B}
-  .fname{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-faint);margin:0 0 6px}
-  .note{border-radius:10px;padding:14px 17px;margin:0 0 16px;border-left:3px solid;font-size:14.5px}
-  .note p:last-child{margin-bottom:0}
-  .note .lbl{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13.5px;display:block;margin-bottom:4px}
-  .note.ok{background:var(--ok-bg);border-color:var(--ok)}.note.ok .lbl{color:var(--ok)}
-  .note.warn{background:var(--warn-bg);border-color:var(--warn)}.note.warn .lbl{color:var(--warn)}
-  .note.a{background:var(--a-bg);border-color:var(--a)}.note.a .lbl{color:var(--a)}
-  .tbl-wrap{overflow-x:auto;margin:0 0 14px;border:1px solid var(--line);border-radius:10px}
-  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
-  th{background:#F7F9FB;text-align:left;font-weight:600;font-size:12px;color:var(--ink-soft);padding:10px 13px;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace}
-  td{padding:10px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
-  tr:last-child td{border-bottom:none}
-  td.hd{font-weight:600;white-space:nowrap;color:var(--brand)}
-  td code{font-size:12px}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 8px}
-  .two h4{margin:0 0 6px;font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--ink-faint)}
-  .two .col{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
-  .two .col.no{background:#FcF4F3;border-color:#Ebcfcc}
-  .two .col.yes{background:var(--ok-bg);border-color:#bfe0d3}
-  .two ul{margin:0;padding-left:18px;font-size:13.5px}
-  footer{color:var(--ink-faint);font-size:13px;text-align:center;padding:24px 0 46px}
-  @media(max-width:680px){section{padding:22px 18px}.wrap{padding:0 16px}.two{grid-template-columns:1fr}}
-  @media print{body{background:#fff}.cover{background:#fff;color:var(--ink);border-bottom:2px solid var(--brand)}.cover::after{display:none}.kick{color:var(--a)}.cover h1{color:var(--ink)}.cover .lede{color:var(--ink-soft)}section{box-shadow:none;break-inside:avoid}pre,table,.note,.two{break-inside:avoid}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEP — Webhook Fan-out 規格</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F3F4F6;
+      --paper: #FFFFFF;
+      --ink: #17212E;
+      --ink-soft: #52606D;
+      --ink-faint: #8A94A2;
+      --line: #DFE3E9;
+      --line-soft: #EBEEF2;
+      --brand: #22384F;
+      --a: #2C6E9B;
+      --a-bg: #EAF2F8;
+      --ok: #17876A;
+      --ok-bg: #E7F3EE;
+      --warn: #A96A1B;
+      --warn-bg: #FBF3E6;
+      --code-bg: #1C2A3A;
+      --code-ink: #DCE4EE;
+      --shadow: 0 1px 2px rgba(23, 33, 46, .04), 0 8px 28px rgba(23, 33, 46, .06);
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      font-size: 16px;
+      line-height: 1.68;
+      -webkit-font-smoothing: antialiased
+    }
+
+    .wrap {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 0 26px
+    }
+
+    .cover {
+      background: var(--brand);
+      color: #EAEEF3;
+      padding: 52px 0 42px;
+      position: relative;
+      overflow: hidden
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+      background-size: 26px 26px;
+      pointer-events: none
+    }
+
+    .cover .wrap {
+      position: relative;
+      z-index: 1
+    }
+
+    .kick {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      letter-spacing: .04em;
+      color: #8FB2CE;
+      margin: 0 0 16px
+    }
+
+    .cover h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: clamp(26px, 4.5vw, 38px);
+      line-height: 1.12;
+      margin: 0 0 12px
+    }
+
+    .cover .lede {
+      font-size: 16px;
+      max-width: 64ch;
+      color: #C4D2DE;
+      margin: 0
+    }
+
+    main {
+      padding: 38px 0 80px
+    }
+
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 30px 34px;
+      margin: 0 0 22px;
+      box-shadow: var(--shadow)
+    }
+
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 22px;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: baseline;
+      gap: 12px
+    }
+
+    h2 .no {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      color: var(--a);
+      font-weight: 500
+    }
+
+    .sub {
+      color: var(--ink-soft);
+      font-size: 15px;
+      margin: 0 0 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line-soft)
+    }
+
+    h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 16.5px;
+      margin: 24px 0 10px
+    }
+
+    p {
+      margin: 0 0 13px
+    }
+
+    strong {
+      font-weight: 600
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .86em;
+      background: var(--line-soft);
+      padding: 1.5px 6px;
+      border-radius: 5px;
+      color: #294056
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px;
+      padding-left: 22px
+    }
+
+    li {
+      margin: 0 0 7px
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-ink);
+      padding: 18px 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.62;
+      margin: 0 0 14px
+    }
+
+    pre .k {
+      color: #7FB0D8
+    }
+
+    pre .s {
+      color: #9BD1A4
+    }
+
+    pre .c {
+      color: #6B7C8E
+    }
+
+    pre .n {
+      color: #D8A26B
+    }
+
+    pre .b {
+      color: #C08CD8
+    }
+
+    pre .p {
+      color: #D8A26B
+    }
+
+    .fname {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-faint);
+      margin: 0 0 6px
+    }
+
+    .note {
+      border-radius: 10px;
+      padding: 14px 17px;
+      margin: 0 0 16px;
+      border-left: 3px solid;
+      font-size: 14.5px
+    }
+
+    .note p:last-child {
+      margin-bottom: 0
+    }
+
+    .note .lbl {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+      font-size: 13.5px;
+      display: block;
+      margin-bottom: 4px
+    }
+
+    .note.ok {
+      background: var(--ok-bg);
+      border-color: var(--ok)
+    }
+
+    .note.ok .lbl {
+      color: var(--ok)
+    }
+
+    .note.warn {
+      background: var(--warn-bg);
+      border-color: var(--warn)
+    }
+
+    .note.warn .lbl {
+      color: var(--warn)
+    }
+
+    .note.a {
+      background: var(--a-bg);
+      border-color: var(--a)
+    }
+
+    .note.a .lbl {
+      color: var(--a)
+    }
+
+    .tbl-wrap {
+      overflow-x: auto;
+      margin: 0 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      min-width: 520px
+    }
+
+    th {
+      background: #F7F9FB;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding: 10px 13px;
+      border-bottom: 1px solid var(--line);
+      font-family: 'JetBrains Mono', monospace
+    }
+
+    td {
+      padding: 10px 13px;
+      border-bottom: 1px solid var(--line-soft);
+      vertical-align: top
+    }
+
+    tr:last-child td {
+      border-bottom: none
+    }
+
+    td.hd {
+      font-weight: 600;
+      white-space: nowrap;
+      color: var(--brand)
+    }
+
+    td code {
+      font-size: 12px
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 0 0 8px
+    }
+
+    .two h4 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--ink-faint)
+    }
+
+    .two .col {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px
+    }
+
+    .two .col.no {
+      background: #FcF4F3;
+      border-color: #Ebcfcc
+    }
+
+    .two .col.yes {
+      background: var(--ok-bg);
+      border-color: #bfe0d3
+    }
+
+    .two ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13.5px
+    }
+
+    footer {
+      color: var(--ink-faint);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px 0 46px
+    }
+
+    @media(max-width:680px) {
+      section {
+        padding: 22px 18px
+      }
+
+      .wrap {
+        padding: 0 16px
+      }
+
+      .two {
+        grid-template-columns: 1fr
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff
+      }
+
+      .cover {
+        background: #fff;
+        color: var(--ink);
+        border-bottom: 2px solid var(--brand)
+      }
+
+      .cover::after {
+        display: none
+      }
+
+      .kick {
+        color: var(--a)
+      }
+
+      .cover h1 {
+        color: var(--ink)
+      }
+
+      .cover .lede {
+        color: var(--ink-soft)
+      }
+
+      section {
+        box-shadow: none;
+        break-inside: avoid
+      }
+
+      pre,
+      table,
+      .note,
+      .two {
+        break-inside: avoid
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<header class="cover">
-  <div class="wrap">
-    <p class="kick">MEP · WEBHOOK FAN-OUT · v3</p>
-    <h1>MEP 是一個 Webhook 轉發器</h1>
-    <p class="lede">收到一包訊息 → 看它要送給哪些 target → 對每個 target 註冊的 webhook URL 各發一個 HTTP POST。payload 是黑箱,MEP 不解讀。它不是協議、也不懂任何一家的 API,因為每個 target 都自己露一個 RESTful webhook。</p>
-  </div>
-</header>
-
-<div class="wrap"><main>
-
-  <!-- 1 定位 -->
-  <section>
-    <h2><span class="no">01</span> 它做什麼、不做什麼</h2>
-    <p class="sub">一句話:收信 → 拆給每個 target → POST 到它的 URL。門後的事都不歸它。</p>
-    <div class="two">
-      <div class="col yes">
-        <h4>MEP 做</h4>
-        <ul>
-          <li>驗 inbound 信封格式</li>
-          <li>依 <code>targets</code> 展開,每個配 <code>event_id</code></li>
-          <li>對每個 target 的 <code>callback_url</code> 發 POST</li>
-          <li>簽章、失敗重試、去重</li>
-        </ul>
-      </div>
-      <div class="col no">
-        <h4>MEP 不做</h4>
-        <ul>
-          <li>不看 <code>payload</code> 內容</li>
-          <li>不呼叫 LINE / Odoo 等任何家的 API</li>
-          <li>不展開「所有群」「所有客戶」名單</li>
-          <li>不管 target 收到後怎麼處理</li>
-        </ul>
-      </div>
+  <header class="cover">
+    <div class="wrap">
+      <p class="kick">MEP · WEBHOOK FAN-OUT · v3</p>
+      <h1>MEP 是一個 Webhook 轉發器</h1>
+      <p class="lede">收到一包訊息 → 看它要送給哪些 target → 對每個 target 註冊的 webhook URL 各發一個 HTTP POST。payload 是黑箱,MEP
+        不解讀。它不是協議、也不懂任何一家的 API,因為每個 target 都自己露一個 RESTful webhook。</p>
     </div>
-    <p>對 MEP 而言所有 target 一視同仁:LINE、Odoo、Weather App 都只是「一個有 webhook URL 的 target」,發 POST 的動作完全一樣。差別(要不要 <code>send_mode</code>、要不要名單)全在 payload 和 target 端,MEP 不區分。</p>
-  </section>
+  </header>
 
-  <!-- 2 參與方註冊 -->
-  <section>
-    <h2><span class="no">02</span> 參與方註冊</h2>
-    <p class="sub">每個能收發的端點註冊一次。MEP 靠這張表知道「某個 endpoint 的 POST 要發去哪、用哪把 secret 簽」。</p>
-    <div class="tbl-wrap"><table>
-      <thead><tr><th>欄位</th><th>說明</th></tr></thead>
-      <tbody>
-        <tr><td class="hd"><code>endpoint</code></td><td>唯一名稱,如 <code>LINE_EXTERNAL</code>、<code>ODOO</code>、<code>WEATHER_APP</code></td></tr>
-        <tr><td class="hd"><code>callback_url</code></td><td>該 target 的 webhook 位置,MEP outbound 就 POST 到這</td></tr>
-        <tr><td class="hd"><code>secret</code></td><td>HMAC 簽章用,收方以同一把重算驗證</td></tr>
-      </tbody>
-    </table></div>
-    <p>之後多接一個系統,就是這張表多一筆,MEP 程式不用改。(目前 <code>endpoint</code> 名稱在 inbound schema 裡是固定 enum,四個以內清楚好用;日後參與方變多時再把 enum 放寬成一般字串、由這張註冊表當唯一真相即可。)</p>
-  </section>
+  <div class="wrap">
+    <main>
 
-  <!-- 3 inbound -->
-  <section>
-    <h2><span class="no">03</span> Inbound:參與方 → MEP</h2>
-    <p class="sub">參與方把訊息 POST 到 MEP 的 <code>/ingress</code>。地址在信封,payload 是黑箱。完整校驗規則見隨附的 <code>mep-schema.json</code>。</p>
-    <pre><span class="k">POST</span> /ingress
+      <!-- 1 定位 -->
+      <section>
+        <h2><span class="no">01</span> 它做什麼、不做什麼</h2>
+        <p class="sub">一句話:收信 → 拆給每個 target → POST 到它的 URL。門後的事都不歸它。</p>
+        <div class="two">
+          <div class="col yes">
+            <h4>MEP 做</h4>
+            <ul>
+              <li>驗 inbound 信封格式</li>
+              <li>依 <code>targets</code> 展開,每個配 <code>event_id</code></li>
+              <li>對每個 target 的 <code>callback_url</code> 發 POST</li>
+              <li>簽章、失敗重試、去重</li>
+            </ul>
+          </div>
+          <div class="col no">
+            <h4>MEP 不做</h4>
+            <ul>
+              <li>不看 <code>payload</code> 內容</li>
+              <li>不呼叫 LINE / Odoo 等任何家的 API</li>
+              <li>不展開「所有群」「所有客戶」名單</li>
+              <li>不管 target 收到後怎麼處理</li>
+            </ul>
+          </div>
+        </div>
+        <p>對 MEP 而言所有 target 一視同仁:LINE、Odoo、Weather App 都只是「一個有 webhook URL 的 target」,發 POST 的動作完全一樣。差別(要不要
+          <code>send_mode</code>、要不要名單)全在 payload 和 target 端,MEP 不區分。</p>
+      </section>
+
+      <!-- 2 參與方註冊 -->
+      <section>
+        <h2><span class="no">02</span> 參與方註冊</h2>
+        <p class="sub">每個能收發的端點註冊一次。MEP 靠這張表知道「某個 endpoint 的 POST 要發去哪、用哪把 secret 簽」。</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>欄位</th>
+                <th>說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="hd"><code>endpoint</code></td>
+                <td>唯一名稱,如 <code>LINE_EXTERNAL</code>、<code>ODOO</code>、<code>WEATHER_APP</code></td>
+              </tr>
+              <tr>
+                <td class="hd"><code>callback_url</code></td>
+                <td>該 target 的 webhook 位置,MEP outbound 就 POST 到這</td>
+              </tr>
+              <tr>
+                <td class="hd"><code>secret</code></td>
+                <td>HMAC 簽章用,收方以同一把重算驗證</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>之後多接一個系統,就是這張表多一筆,MEP 程式不用改。(目前 <code>endpoint</code> 名稱在 inbound schema 裡是固定 enum,四個以內清楚好用;日後參與方變多時再把 enum
+          放寬成一般字串、由這張註冊表當唯一真相即可。)</p>
+      </section>
+
+      <!-- 3 inbound -->
+      <section>
+        <h2><span class="no">03</span> Inbound:參與方 → MEP</h2>
+        <p class="sub">參與方把訊息 POST 到 MEP 的 <code>/ingress</code>。地址在信封,payload 是黑箱。完整校驗規則見隨附的
+          <code>mep-schema.json</code>。</p>
+        <pre><span class="k">POST</span> /ingress
 <span class="p">Content-Type</span>: application/json
 <span class="p">X-Signature</span>: sha256=&lt;hex&gt;
 <span class="p">X-Timestamp</span>: 1736500000
@@ -134,24 +495,28 @@
   ],
   <span class="k">"payload"</span>: { <span class="c">/* 純內容,MEP 不看,原樣轉給每個 target */</span> }
 }</pre>
-    <h3>MEP 收到後</h3>
-    <ol>
-      <li>用 <code>source</code> 的 secret 驗簽,拒收過舊 timestamp。</li>
-      <li>驗信封:<code>targets</code> 每個 <code>endpoint</code> 已註冊;LINE 的 <code>send_mode</code>／名單完整(見 schema)。任一不過 → 整批 <code>422</code>。</li>
-      <li>產生 <code>event_id</code>、落地。</li>
-      <li>回 <code>202</code>,再非同步對每個 target 各發一個 outbound POST。</li>
-    </ol>
-    <div class="note a">
-      <span class="lbl">地址 vs 內容</span>
-      <p>信封上的 <code>endpoint</code>、<code>send_mode</code>、<code>line_*_ids</code> 是<strong>地址</strong>,MEP 會讀(用來投遞、驗完整性)。<code>payload</code> 是<strong>內容</strong>,MEP 不讀。<code>send_mode</code> 雖在信封,但 MEP 只搬運不解讀——真正拿它選 LINE broadcast/push API 的是 LINE 那端的 webhook。</p>
-    </div>
-  </section>
+        <h3>MEP 收到後</h3>
+        <ol>
+          <li>用 <code>source</code> 的 secret 驗簽,拒收過舊 timestamp。</li>
+          <li>驗信封:<code>targets</code> 每個 <code>endpoint</code> 已註冊;LINE 的 <code>send_mode</code>／名單完整(見 schema)。任一不過 →
+            整批 <code>422</code>。</li>
+          <li>產生 <code>event_id</code>、落地。</li>
+          <li>回 <code>202</code>,再非同步對每個 target 各發一個 outbound POST。</li>
+        </ol>
+        <div class="note a">
+          <span class="lbl">地址 vs 內容</span>
+          <p>信封上的 <code>endpoint</code>、<code>send_mode</code>、<code>line_*_ids</code> 是<strong>地址</strong>,MEP
+            會讀(用來投遞、驗完整性)。<code>payload</code> 是<strong>內容</strong>,MEP 不讀。<code>send_mode</code> 雖在信封,但 MEP
+            只搬運不解讀——真正拿它選 LINE broadcast/push API 的是 LINE 那端的 webhook。</p>
+        </div>
+      </section>
 
-  <!-- 4 outbound -->
-  <section>
-    <h2><span class="no">04</span> Outbound:MEP → target 的 webhook</h2>
-    <p class="sub">對 <code>targets</code> 裡每個目標,各發一個 POST 到它註冊的 <code>callback_url</code>。點對點,故信封帶單一 <code>target</code>、加上 <code>event_id</code> 與 <code>occurred_at</code>。</p>
-    <pre><span class="k">POST</span> {target.callback_url}
+      <!-- 4 outbound -->
+      <section>
+        <h2><span class="no">04</span> Outbound:MEP → target 的 webhook</h2>
+        <p class="sub">對 <code>targets</code> 裡每個目標,各發一個 POST 到它註冊的 <code>callback_url</code>。點對點,故信封帶單一
+          <code>target</code>、加上 <code>event_id</code> 與 <code>occurred_at</code>。</p>
+        <pre><span class="k">POST</span> {target.callback_url}
 <span class="p">Content-Type</span>: application/json
 <span class="p">X-MEP-Event-Id</span>: 550e8400-e29b-41d4-a716-446655440000
 <span class="p">X-Signature</span>: sha256=&lt;hex&gt;
@@ -165,22 +530,26 @@
   <span class="k">"payload"</span>: { <span class="c">/* 原封不動 */</span> },
   <span class="k">"occurred_at"</span>: <span class="s">"2026-09-10T08:30:00Z"</span>
 }</pre>
-    <h3>target 那端收到後(門後,MEP 不管)</h3>
-    <p>各 target 的 webhook 自己解 <code>payload</code>、自己呼叫自己下游。例如 LINE Webhook Server:讀 <code>send_mode</code> 與名單 → 選 LINE Messaging API(broadcast / multicast / 逐群 push)→ 取出 payload 約定的文字 → 呼叫 LINE。Odoo、Weather App 各自照它們的約定處理。</p>
-    <div class="note warn">
-      <span class="lbl">各 target 的 payload 契約由誰定</span>
-      <p>MEP 不管 payload 形狀,所以<strong>每個 target 期望的 payload 長怎樣,是該 target 自己訂、發送方要遵守的約定</strong>(例如送 LINE 帶 <code>{ "text": "..." }</code>)。這份契約不屬於 MEP,是各 target 端的規格。</p>
-    </div>
-  </section>
+        <h3>target 那端收到後(門後,MEP 不管)</h3>
+        <p>各 target 的 webhook 自己解 <code>payload</code>、自己呼叫自己下游。例如 LINE Webhook Server:讀 <code>send_mode</code> 與名單 → 選
+          LINE Messaging API(broadcast / multicast / 逐群 push)→ 取出 payload 約定的文字 → 呼叫 LINE。Odoo、Weather App 各自照它們的約定處理。
+        </p>
+        <div class="note warn">
+          <span class="lbl">各 target 的 payload 契約由誰定</span>
+          <p>MEP 不管 payload 形狀,所以<strong>每個 target 期望的 payload 長怎樣,是該 target 自己訂、發送方要遵守的約定</strong>(例如送 LINE 帶
+            <code>{ "text": "..." }</code>)。這份契約不屬於 MEP,是各 target 端的規格。</p>
+        </div>
+      </section>
 
-  <!-- 5 use cases -->
-  <section>
-    <h2><span class="no">05</span> 實例:同一套動作,不同情境</h2>
-    <p class="sub">下面五個情境,MEP 做的事永遠一樣(收信→拆→POST)。差別全在信封的 <code>targets</code> 和門後怎麼處理。看完就會發現它有多單純。</p>
+      <!-- 5 use cases -->
+      <section>
+        <h2><span class="no">05</span> 實例:同一套動作,不同情境</h2>
+        <p class="sub">下面五個情境,MEP 做的事永遠一樣(收信→拆→POST)。差別全在信封的 <code>targets</code> 和門後怎麼處理。看完就會發現它有多單純。</p>
 
-    <h3>案例 1 · 客戶進線:一進多出</h3>
-    <p>客戶在對外 LINE 群發問。<code>LINE_EXTERNAL</code> 的 webhook server 把它正規化後送進 MEP,同時要給兩個下游:Odoo 記一筆、api-app 判斷關鍵字。<strong>一則進、兩則出</strong>,這就是 fan-out 的本色。</p>
-    <pre>{
+        <h3>案例 1 · 客戶進線:一進多出</h3>
+        <p>客戶在對外 LINE 群發問。<code>LINE_EXTERNAL</code> 的 webhook server 把它正規化後送進 MEP,同時要給兩個下游:Odoo 記一筆、api-app
+          判斷關鍵字。<strong>一則進、兩則出</strong>,這就是 fan-out 的本色。</p>
+        <pre>{
   <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"line_group_id"</span>: <span class="s">"Cabc123"</span>, <span class="k">"line_user_id"</span>: <span class="s">"Uabc123"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
@@ -188,11 +557,11 @@
   ],
   <span class="k">"payload"</span>: { <span class="k">"text"</span>: <span class="s">"這批貨可以報價嗎"</span> }
 }</pre>
-    <p class="fname">MEP:對 ODOO、WEATHER_APP 的 callback_url 各發一個 POST。門後各自解 payload。</p>
+        <p class="fname">MEP:對 ODOO、WEATHER_APP 的 callback_url 各發一個 POST。門後各自解 payload。</p>
 
-    <h3>案例 2 · Odoo 場勘通知:push 到指定群</h3>
-    <p>Odoo 排定了一場場勘,要通知該案的客戶群與負責的內部群。target 是 LINE,<code>send_mode: push</code> 帶群名單(一個對外群、一個對內群)。</p>
-    <pre>{
+        <h3>案例 2 · Odoo 場勘通知:push 到指定群</h3>
+        <p>Odoo 排定了一場場勘,要通知該案的客戶群與負責的內部群。target 是 LINE,<code>send_mode: push</code> 帶群名單(一個對外群、一個對內群)。</p>
+        <pre>{
   <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"push"</span>,
@@ -202,58 +571,65 @@
   ],
   <span class="k">"payload"</span>: { <span class="k">"text"</span>: <span class="s">"場勘已排定:3/18(二) 14:00,地址 台北市信義區…,案號 A123"</span> }
 }</pre>
-    <p class="fname">MEP:對 LINE_EXTERNAL、LINE_INTERNAL 的 callback 各發一個 POST。兩端的 LINE server 讀 send_mode=push,各自 push 到指定群。</p>
+        <p class="fname">MEP:對 LINE_EXTERNAL、LINE_INTERNAL 的 callback 各發一個 POST。兩端的 LINE server 讀 send_mode=push,各自 push
+          到指定群。</p>
 
-    <h3>案例 3 · 全體促銷:群發</h3>
-    <p>對外 LINE@ 要發促銷給所有加好友的人。不帶名單,<code>send_mode: broadcast</code>。</p>
-    <pre>{
+        <h3>案例 3 · 全體促銷:群發</h3>
+        <p>對外 LINE@ 要發促銷給所有加好友的人。不帶名單,<code>send_mode: broadcast</code>。</p>
+        <pre>{
   <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"WEATHER_APP"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_EXTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"broadcast"</span> }
   ],
   <span class="k">"payload"</span>: { <span class="k">"text"</span>: <span class="s">"本週限定優惠開跑!"</span> }
 }</pre>
-    <p class="fname">MEP:一樣只是 POST 到 callback。門後的 LINE server 呼叫 LINE broadcast API,對象由 LINE 決定,MEP 不碰名單。</p>
+        <p class="fname">MEP:一樣只是 POST 到 callback。門後的 LINE server 呼叫 LINE broadcast API,對象由 LINE 決定,MEP 不碰名單。</p>
 
-    <h3>案例 4 · 公告到所有群:all_groups</h3>
-    <p>要發一則公告到「LINE@ 目前所在的每一個群」。發送方不列群,<code>send_mode: all_groups</code>,由 LINE server 拿它自己維護的群清單去逐一 push。</p>
-    <pre>{
+        <h3>案例 4 · 公告到所有群:all_groups</h3>
+        <p>要發一則公告到「LINE@ 目前所在的每一個群」。發送方不列群,<code>send_mode: all_groups</code>,由 LINE server 拿它自己維護的群清單去逐一 push。</p>
+        <pre>{
   <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> },
   <span class="k">"targets"</span>: [
     { <span class="k">"endpoint"</span>: <span class="s">"LINE_INTERNAL"</span>, <span class="k">"send_mode"</span>: <span class="s">"all_groups"</span> }
   ],
   <span class="k">"payload"</span>: { <span class="k">"text"</span>: <span class="s">"系統將於今晚 22:00 維護"</span> }
 }</pre>
-    <p class="fname">MEP:照樣 POST。「所有群包含哪些群」完全是門後 LINE server 的事,MEP 不展開、不知道。</p>
+        <p class="fname">MEP:照樣 POST。「所有群包含哪些群」完全是門後 LINE server 的事,MEP 不展開、不知道。</p>
 
-    <h3>案例 5 · App 之間互打:跟 LINE 無關也一樣</h3>
-    <p>api-app(此處以 WEATHER_APP 代表)算完結果要寫回 Odoo。來源和目標都不是 LINE,沒有 send_mode、沒有名單——證明 MEP 對非 LINE 的 target 一視同仁。</p>
-    <pre>{
+        <h3>案例 5 · App 之間互打:跟 LINE 無關也一樣</h3>
+        <p>api-app(此處以 WEATHER_APP 代表)算完結果要寫回 Odoo。來源和目標都不是 LINE,沒有 send_mode、沒有名單——證明 MEP 對非 LINE 的 target 一視同仁。</p>
+        <pre>{
   <span class="k">"source"</span>: { <span class="k">"endpoint"</span>: <span class="s">"WEATHER_APP"</span> },
   <span class="k">"targets"</span>: [ { <span class="k">"endpoint"</span>: <span class="s">"ODOO"</span> } ],
   <span class="k">"payload"</span>: { <span class="c">/* Odoo webhook 自己約定的內容 */</span> }
 }</pre>
-    <p class="fname">MEP:POST 到 ODOO 的 callback。從頭到尾沒碰過 LINE 的任何概念。</p>
+        <p class="fname">MEP:POST 到 ODOO 的 callback。從頭到尾沒碰過 LINE 的任何概念。</p>
 
-    <div class="note ok">
-      <span class="lbl">五個案例的共同點</span>
-      <p>MEP 的動作在每個案例都<strong>完全相同</strong>:收信、對每個 target 的 callback_url 發 POST。單發、廣發、一進多出、App 互打的差異,全部落在「信封怎麼填」和「門後怎麼處理」,沒有一項需要改 MEP。這就是它保持單純的證據。</p>
-    </div>
-  </section>
+        <div class="note ok">
+          <span class="lbl">五個案例的共同點</span>
+          <p>MEP 的動作在每個案例都<strong>完全相同</strong>:收信、對每個 target 的 callback_url 發 POST。單發、廣發、一進多出、App
+            互打的差異,全部落在「信封怎麼填」和「門後怎麼處理」,沒有一項需要改 MEP。這就是它保持單純的證據。</p>
+        </div>
+      </section>
 
-  <!-- 6 可靠性 -->
-  <section>
-    <h2><span class="no">06</span> 三項可靠性</h2>
-    <p class="sub">webhook 轉發唯一必要的複雜度,其餘從簡。</p>
-    <ul>
-      <li><strong>去重(至少送達一次):</strong>每個 outbound 帶唯一 <code>event_id</code>。若 target 已處理但回應遺失,MEP 會重推,故 target 以 <code>event_id</code> 去重,重複回 200 忽略。</li>
-      <li><strong>簽章:</strong>對 <code>X-Timestamp + "." + body</code> 算 HMAC-SHA256 放 <code>X-Signature</code>,收方以該 endpoint 的 secret 重算比對,並拒收過舊 timestamp。</li>
-      <li><strong>指數退避重試:</strong>非 <code>2xx</code> 或逾時即失敗,間隔逐次拉長(如 1 分 → 5 分 → 30 分 → 2 時 → 6 時),達上限(如 8 次)標記 <code>dead</code>,進失敗清單並告警。每個 target 各自算,一個掛掉不影響其他。</li>
-    </ul>
-  </section>
+      <!-- 6 可靠性 -->
+      <section>
+        <h2><span class="no">06</span> 三項可靠性</h2>
+        <p class="sub">webhook 轉發唯一必要的複雜度,其餘從簡。</p>
+        <ul>
+          <li><strong>去重(至少送達一次):</strong>每個 outbound 帶唯一 <code>event_id</code>。若 target 已處理但回應遺失,MEP 會重推,故 target 以
+            <code>event_id</code> 去重,重複回 200 忽略。</li>
+          <li><strong>簽章:</strong>對 <code>X-Timestamp + "." + body</code> 算 HMAC-SHA256 放 <code>X-Signature</code>,收方以該
+            endpoint 的 secret 重算比對,並拒收過舊 timestamp。</li>
+          <li><strong>指數退避重試:</strong>非 <code>2xx</code> 或逾時即失敗,間隔逐次拉長(如 1 分 → 5 分 → 30 分 → 2 時 → 6 時),達上限(如 8 次)標記
+            <code>dead</code>,進失敗清單並告警。每個 target 各自算,一個掛掉不影響其他。</li>
+        </ul>
+      </section>
 
-  <footer>MEP · Webhook Fan-out 規格 · 2026-09-10 · 搭配 mep-schema.json</footer>
+      <footer>MEP · Webhook Fan-out 規格 · 2026-09-10 · 搭配 mep-schema.json</footer>
 
-</main></div>
+    </main>
+  </div>
 </body>
+
 </html>
